@@ -31,7 +31,7 @@ module.exports.auth = (event, context, callback) => {
 
   }).catch(err => {
     console.log("Error on auth:", err);
-    callback(null, { statusCode: 200, body: "ERROR!" });
+    callback(null, { statusCode: 500, body: "ERROR!" });
   });
 };
 
@@ -65,7 +65,7 @@ module.exports.callback = (event, context, callback) => {
 
   }).catch(err => {
     console.log("Error on callback:", err);
-    callback(null, { statusCode: 200, body: "ERROR!" });
+    callback(null, { statusCode: 500, body: "ERROR!" });
   });
 };
 
@@ -98,6 +98,6 @@ module.exports.me = (event, context, callback) => {
 
   }).catch(err => {
     console.log("Error on me:", err);
-    callback(null, { statusCode: 200, body: "ERROR!" });
+    callback(null, { statusCode: 500, body: JSON.stringify({ error: 1 }) });
   });
 };
