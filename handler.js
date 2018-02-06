@@ -68,3 +68,36 @@ module.exports.callback = (event, context, callback) => {
     callback(null, { statusCode: 200, body: "ERROR!" });
   });
 };
+
+module.exports.me = (event, context, callback) => {
+  vo(function*(){
+    const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
+
+    const ret = yield dynamodb.getItem({
+      TableName: "twitter_oauth",
+      Key: { "uid": {S:sessid} },
+      AttributesToGet: ['twitter_id', 'screen_name', 'display_name']
+    }).promise();
+    
+    const row = ret.Item;
+    
+    if (!row) {
+      throw new Error("Record not found. sessid=" + sessid);
+    }
+
+    if (!row.twitter_id) {
+      throw new Error("Not logged in. sessid=" + sessid);
+    }
+    
+    // flatten dynamodb returns
+    for (const key of Object.keys(row)) {
+      row[key] = row[key].S;
+    }
+
+    callback(null, { statusCode: 200, body: JSON.stringify(row) });
+
+  }).catch(err => {
+    console.log("Error on me:", err);
+    callback(null, { statusCode: 200, body: "ERROR!" });
+  });
+};
