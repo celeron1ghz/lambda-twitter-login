@@ -16,7 +16,7 @@ provider:
     - Effect: Allow
       Action:
         - dynamodb:GetItem
-        - dynamodb:UpdateItem
+        - dynamodb:PutItem
       Resource:
         - Fn::Join: [ ":", ["arn:aws:dynamodb", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "table/twitter_oauth"]]
 

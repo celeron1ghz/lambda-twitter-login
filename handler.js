@@ -14,14 +14,14 @@ module.exports.auth = (event, context, callback) => {
     const oauth = yield TwitterOAuth.createInstance(event);
     const auth  = yield oauth.getOAuthRequestToken();
 
-    yield dynamodb.updateItem({
-      Key:                       { "uid": {S:uid} }, 
-      ExpressionAttributeNames:  { "#session": "session", "#ttl": "ttl" }, 
-      ExpressionAttributeValues: { ":value": {S:auth.oauth_token_secret}, ":ttl": {N:(new Date().getTime() / 1000 + 60 * 24) + ""} }, 
-      ReturnValues: "ALL_NEW", 
+    yield dynamodb.putItem({
       TableName: "twitter_oauth", 
-      UpdateExpression: "SET #session = :value, #ttl = :ttl"
-    }).promise()
+      Item: {
+        uid: {S:uid},
+        ttl: {N:(new Date().getTime() / 1000 + 60 * 24) + ""},
+        session: {S:auth.oauth_token_secret},
+      },
+    }).promise();
 
     callback(null, {
       statusCode: 200,
@@ -32,7 +32,7 @@ module.exports.auth = (event, context, callback) => {
   }).catch(err => {
     console.log("Error on auth:", err);
     callback(null, { statusCode: 200, body: "ERROR!" });
-  })
+  });
 };
 
 module.exports.callback = (event, context, callback) => {
@@ -43,17 +43,28 @@ module.exports.callback = (event, context, callback) => {
     const row    = yield dynamodb.getItem({ TableName: "twitter_oauth", Key: { "uid": {S:sessid} } }).promise();
     
     if (!row.Item) {
-      throw new Error("Record not found for sessid=" + sessid)
+      throw new Error("Record not found for sessid=" + sessid);
     }
     
     const oauth_token_secret = row.Item.session.S;
     const ret = yield oauth.getOAuthAccessToken(query.oauth_token, oauth_token_secret, query.oauth_verifier);
+    const me  = yield oauth.call_get_api(ret.access_token, ret.access_token_secret, "account/verify_credentials", {});
+
+    yield dynamodb.putItem({
+      TableName: "twitter_oauth",
+      Item: {
+        uid:          {S:sessid},
+        twitter_id:   {S:me.id_str},
+        screen_name:  {S:me.screen_name},
+        display_name: {S:me.name},
+        ttl:          {N:(new Date().getTime() / 1000 + 60 * 24 * 30) + ""},
+      },
+    }).promise();
     
-    console.log(ret);
     callback(null, { statusCode: 200, body: "OK" });
 
   }).catch(err => {
     console.log("Error on callback:", err);
     callback(null, { statusCode: 200, body: "ERROR!" });
-  })
+  });
 };
