@@ -32,7 +32,7 @@ functions:
   me:
     handler: handler.me
     events:
-      - { http: { path: me, method: get } }
+      - { http: { path: me, method: get, cors: true } }
 
 resources:
   Resources:
