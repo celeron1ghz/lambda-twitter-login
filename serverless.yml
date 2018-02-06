@@ -45,11 +45,12 @@ resources:
         KeySchema:
           - { AttributeName: uid, KeyType: HASH }
         ProvisionedThroughput:
-          ReadCapacityUnits: 2
-          WriteCapacityUnits: 2
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
         TimeToLiveSpecification: 
           AttributeName: ttl
           Enabled: true
+
     WCUAlarm:
       Type: AWS::CloudWatch::Alarm
       Properties:
