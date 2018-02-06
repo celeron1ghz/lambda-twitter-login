@@ -8,21 +8,32 @@ const aws       = require('aws-sdk');
 const ssm       = new aws.SSM();
 const dynamodb  = new aws.DynamoDB();
 
-module.exports.auth = (event, context, callback) => {
-  vo(function*(){
-    const uid             = Cookie.parse(event.headers.Cookie || '').sessid || uniqid();
-    const host            = event.headers.Host; // + event.requestContext.path;
-    const consumer_key    = (yield ssm.getParameter({ Name: '/twitter_oauth/consumer_key',    WithDecryption: true }).promise() ).Parameter.Value;
-    const consumer_secret = (yield ssm.getParameter({ Name: '/twitter_oauth/consumer_secret', WithDecryption: true }).promise() ).Parameter.Value;
-    const oauth           = new OAuth(
+
+function getOAuthObject(event) {
+  return vo(function*(){
+    const host   = 'https://' + event.headers.Host + '/dev/callback'; // + event.requestContext.path;
+    const key    = (yield ssm.getParameter({ Name: '/twitter_oauth/consumer_key',    WithDecryption: true }).promise() ).Parameter.Value;
+    const secret = (yield ssm.getParameter({ Name: '/twitter_oauth/consumer_secret', WithDecryption: true }).promise() ).Parameter.Value;
+    
+    return new OAuth(
       'https://api.twitter.com/oauth/request_token',
       'https://api.twitter.com/oauth/access_token',
-      consumer_key,
-      consumer_secret,
+      key,
+      secret,
       '1.0A',
-      'https://' + host + '/dev/callback',
+      host,
       'HMAC-SHA1'
     );
+  }).catch(err => {
+    console.log("Error on creating oauth object:", err);
+    throw err;
+  })
+}
+
+module.exports.auth = (event, context, callback) => {
+  vo(function*(){
+    const uid   = Cookie.parse(event.headers.Cookie || '').sessid || uniqid();
+    const oauth = yield getOAuthObject(event);
 
     const auth = yield new Promise((resolve, reject) => {
       oauth.getOAuthRequestToken((error, oauth_token, oauth_token_secret, results) => {
@@ -42,7 +53,7 @@ module.exports.auth = (event, context, callback) => {
 
     callback(null, {
       statusCode: 200,
-      body:       JSON.stringify({ url: 'https://twitter.com/oauth/authenticate?oauth_token=' + auth.oauth_token }),
+      body:       'https://twitter.com/oauth/authenticate?oauth_token=' + auth.oauth_token,
       headers:    { 'Set-Cookie': 'sessid=' + uid },
     });
 
@@ -54,22 +65,10 @@ module.exports.auth = (event, context, callback) => {
 
 module.exports.callback = (event, context, callback) => {
   vo(function*(){
-    const query           = event.queryStringParameters;
-    const sessid          = Cookie.parse(event.headers.Cookie || '').sessid;
-    
-    const consumer_key    = (yield ssm.getParameter({ Name: '/twitter_oauth/consumer_key',    WithDecryption: true }).promise() ).Parameter.Value;
-    const consumer_secret = (yield ssm.getParameter({ Name: '/twitter_oauth/consumer_secret', WithDecryption: true }).promise() ).Parameter.Value;
+    const query  = event.queryStringParameters;
+    const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
+    const oauth  = yield getOAuthObject(event);
 
-    const oauth = new OAuth(
-      'https://api.twitter.com/oauth/request_token',
-      'https://api.twitter.com/oauth/access_token',
-      consumer_key,
-      consumer_secret,
-      '1.0A',
-      null,
-      'HMAC-SHA1'
-    );
-    
     const row = yield dynamodb.getItem({ TableName: "twitter_oauth", Key: { "uid": {S:sessid} } }).promise();
     
     if (!row.Item) {
@@ -89,7 +88,7 @@ module.exports.callback = (event, context, callback) => {
 
     console.log(ret);
 
-    callback(null, { statusCode: 200, body: JSON.stringify({ message: "OK" }) });
+    callback(null, { statusCode: 200, body: "OK" });
 
   }).catch(err => {
     console.log("Error on callback:", err);
