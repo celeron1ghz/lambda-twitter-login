@@ -50,3 +50,42 @@ resources:
         TimeToLiveSpecification: 
           AttributeName: ttl
           Enabled: true
+    WCUAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "twitter-oauth-dynamodb-wcu"
+        AlarmDescription: "DynamoDB WCU alarm for twitter-oauth"
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Dimensions:
+          - { Name: TableName, Value: { Ref: SessionTable } }
+        EvaluationPeriods: 1
+        MetricName: ConsumedWriteCapacityUnits
+        Namespace: AWS/DynamoDB
+        Period: 60
+        Statistic: Maximum
+        Threshold: 1
+        TreatMissingData: notBreaching
+        AlarmActions:
+          - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
+        OKActions:
+          - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
+
+    RCUAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "twitter-oauth-dynamodb-rcu"
+        AlarmDescription: "DynamoDB RCU alarm for twitter-oauth"
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Dimensions:
+          - { Name: TableName, Value: { Ref: SessionTable } }
+        EvaluationPeriods: 1
+        MetricName: ConsumedReadCapacityUnits
+        Namespace: AWS/DynamoDB
+        Period: 60
+        Statistic: Maximum
+        Threshold: 1
+        TreatMissingData: notBreaching
+        AlarmActions:
+          - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
+        OKActions:
+          - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
