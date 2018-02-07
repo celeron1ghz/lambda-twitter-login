@@ -27,13 +27,12 @@ ARN of ACM's certificate.
 
 e.g.) `arn:aws:acm:us-east-1:000000000000:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 
-
-NOTICE:
+NOTE:
   * ACM certificate should get in `us-east-1` region. this is AWS's restriction.
   * ACM's domain should be as `*.example.com`
 
 #### TWITTER_OAUTH_ACM_FQDN
-
+API domain name.
 
 e.g.) `auth.example.com`
 
@@ -41,6 +40,7 @@ e.g.) `auth.example.com`
 Domain of serve. Same as `TWITTER_OAUTH_ACM_CERTIFICATE_ARN`'s domain.
 
 e.g.) `example.com`
+
 
 ### SETUP SERVERLESS SCRIPT
 ```
