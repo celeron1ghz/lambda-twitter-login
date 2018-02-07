@@ -33,6 +33,8 @@ functions:
     handler: handler.me
     events:
       - { http: { path: me, method: get, cors: true } }
+    environment:
+      TWITTER_OAUTH_ORIGIN_URL: "${env:TWITTER_OAUTH_ORIGIN_URL}"
 
 resources:
   Resources:

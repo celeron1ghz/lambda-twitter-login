@@ -53,10 +53,11 @@ module.exports.callback = (event, context, callback) => {
     yield dynamodb.putItem({
       TableName: "twitter_oauth",
       Item: {
-        uid:          {S:sessid},
-        twitter_id:   {S:me.id_str},
-        screen_name:  {S:me.screen_name},
-        display_name: {S:me.name},
+        uid:               {S:sessid},
+        twitter_id:        {S:me.id_str},
+        screen_name:       {S:me.screen_name},
+        display_name:      {S:me.name},
+        profile_image_url: {S:me.profile_image_url_https},
         ttl:          {N:(new Date().getTime() / 1000 + 60 * 24 * 30) + ""},
       },
     }).promise();
@@ -76,7 +77,7 @@ module.exports.me = (event, context, callback) => {
     const ret = yield dynamodb.getItem({
       TableName: "twitter_oauth",
       Key: { "uid": {S:sessid} },
-      AttributesToGet: ['twitter_id', 'screen_name', 'display_name']
+      AttributesToGet: ['twitter_id', 'screen_name', 'display_name', 'profile_image_url']
     }).promise();
     
     const row = ret.Item;
@@ -94,7 +95,14 @@ module.exports.me = (event, context, callback) => {
       row[key] = row[key].S;
     }
 
-    callback(null, { statusCode: 200, body: JSON.stringify(row) });
+    callback(null, {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
+        'Access-Control-Allow-Credentials': true,
+      },
+      body: JSON.stringify(row),
+    });
 
   }).catch(err => {
     console.log("Error on me:", err);
