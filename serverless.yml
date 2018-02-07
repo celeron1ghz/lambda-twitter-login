@@ -92,3 +92,27 @@ resources:
           - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
         OKActions:
           - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
+
+    Domain:
+      Type: AWS::ApiGateway::DomainName
+      Properties:
+        CertificateArn: "${env:TWITTER_OAUTH_ACM_CERTIFICATE_ARN}"
+        DomainName:     "${env:TWITTER_OAUTH_ACM_FQDN}"
+
+    Mapping:
+      Type: AWS::ApiGateway::BasePathMapping
+      Properties:
+        DomainName: { Ref: Domain }
+        RestApiId:  { Ref: ApiGatewayRestApi }
+        Stage: dev
+
+    RecordSet:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        Name: "${env:TWITTER_OAUTH_ACM_FQDN}"
+        Type: A
+        HostedZoneName:
+          Fn::Join: [ "", ["${env:TWITTER_OAUTH_ACM_DOMAIN}", "."]]
+        AliasTarget:
+          DNSName: { Fn::GetAtt: [Domain, DistributionDomainName] }
+          HostedZoneId: Z2FDTNDATAQYW2
