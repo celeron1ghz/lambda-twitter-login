@@ -10,7 +10,7 @@ const dynamodb  = new aws.DynamoDB();
 
 module.exports.auth = (event, context, callback) => {
   vo(function*(){
-    const uid   = Cookie.parse(event.headers.Cookie || '').sessid || uniqid();
+    const uid   = uniqid();
     const oauth = yield TwitterOAuth.createInstance(event);
     const auth  = yield oauth.getOAuthRequestToken();
 
