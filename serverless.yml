@@ -66,7 +66,7 @@ resources:
         Namespace: AWS/DynamoDB
         Period: 60
         Statistic: Maximum
-        Threshold: 1
+        Threshold: 60
         TreatMissingData: notBreaching
         AlarmActions:
           - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
@@ -86,7 +86,7 @@ resources:
         Namespace: AWS/DynamoDB
         Period: 60
         Statistic: Maximum
-        Threshold: 1
+        Threshold: 60
         TreatMissingData: notBreaching
         AlarmActions:
           - Fn::Join: [ ":", ["arn:aws:sns", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "aws-slack-notifier"]]
