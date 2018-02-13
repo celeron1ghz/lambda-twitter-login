@@ -9,12 +9,12 @@ const aws       = require('aws-sdk');
 const dynamodb  = new aws.DynamoDB();
 
 module.exports.auth = (event, context, callback) => {
-  vo(function*(){
+  return vo(function*(){
     const uid   = uniqid();
     const oauth = yield TwitterOAuth.createInstance(event);
     const auth  = yield oauth.getOAuthRequestToken();
 
-    yield dynamodb.putItem({
+    const ret = yield dynamodb.putItem({
       TableName: "twitter_oauth", 
       Item: {
         uid: {S:uid},
@@ -23,7 +23,7 @@ module.exports.auth = (event, context, callback) => {
       },
     }).promise();
 
-    callback(null, {
+    return callback(null, {
       statusCode: 200,
       body:       'https://twitter.com/oauth/authenticate?oauth_token=' + auth.oauth_token,
       headers:    { 'Set-Cookie': 'sessid=' + uid },
@@ -31,7 +31,7 @@ module.exports.auth = (event, context, callback) => {
 
   }).catch(err => {
     console.log("Error on auth:", err);
-    callback(null, { statusCode: 500, body: "ERROR!" });
+    return callback(null, { statusCode: 500, body: "ERROR!" });
   });
 };
 
