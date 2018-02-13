@@ -21,7 +21,7 @@ describe('/auth test', () => {
     proxyOAuth = class { createInstance () {} };
     proxyDynamoDB = class { put () {} };
 
-    lambda = proxyquire('../handler', {
+    lambda = proxyquire('./handler', {
       'aws-sdk': { DynamoDB: { DocumentClient: proxyDynamoDB } },
       "./lib/TwitterOAuth":  proxyOAuth,
     });

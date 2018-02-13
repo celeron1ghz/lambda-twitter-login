@@ -19,7 +19,7 @@ describe('/me test', () => {
     event = { headers: { Cookie: null } };
     proxyDynamoDB = class { get () {} };
 
-    lambda = proxyquire('../handler', {
+    lambda = proxyquire('./handler', {
       'aws-sdk': { DynamoDB: { DocumentClient: proxyDynamoDB } },
     });
   });
