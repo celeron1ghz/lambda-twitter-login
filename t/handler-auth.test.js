@@ -7,35 +7,30 @@ const expect = require('chai').expect;
 chai.use(require('chai-as-promised'));
 
 describe('/auth test', () => {
+  const callback = (error, result) => new Promise((resolve, reject) => {
+    error ? reject(error) : resolve(result)
+  });
+
   let event;
-  let callback;
   let lambda;
   let proxyDynamoDB;
   let proxyOAuth;
 
   beforeEach(() => {
     event = { headers: { Cookie: null } };
-    
-    callback = (error, result) => new Promise((resolve, reject) => { error ? reject(error) : resolve(result) });
+    proxyOAuth = class { createInstance () {} };
+    proxyDynamoDB = class { put () {} };
 
-    proxyDynamoDB = class {
-        putItem (params) { return { promise: () => {} }  }
-    };
-
-    proxyOAuth = class {
-        createInstance (params) {  return { promise: () => {} }  }
-    };
-    
     lambda = proxyquire('../handler', {
-      'aws-sdk': { DynamoDB: proxyDynamoDB },
+      'aws-sdk': { DynamoDB: { DocumentClient: proxyDynamoDB } },
       "./lib/TwitterOAuth":  proxyOAuth,
     });
   });
-  
+
 
   it('ok', () => {
     sinon
-      .stub(proxyDynamoDB.prototype, 'putItem')
+      .stub(proxyDynamoDB.prototype, 'put')
       .returns({
         promise: () => Promise.resolve(null)
       });
@@ -49,12 +44,12 @@ describe('/auth test', () => {
           })
         })
       );
-    
+
     return expect(lambda.auth(event, {}, callback)).to.be.fulfilled.then(result => {
       const cookie = result.headers['Set-Cookie'];
       delete result.headers['Set-Cookie']
-      
-      expect(cookie).to.match(/^sessid=\w{17}$/);  
+
+      expect(cookie).to.match(/^sessid=\w{17}$/);
       expect(result).to.deep.equal({
         statusCode: 200,
         headers: {},
@@ -65,6 +60,6 @@ describe('/auth test', () => {
 
 
   afterEach(() => {
-    //proxyDynamoDB.prototype.putItem.restore();
+    proxyDynamoDB.prototype.put.restore();
   });
 });
