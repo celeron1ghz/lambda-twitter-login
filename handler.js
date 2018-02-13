@@ -6,7 +6,7 @@ const vo        = require('vo');
 const uniqid    = require('uniqid');
 const Cookie    = require('cookie');
 const aws       = require('aws-sdk');
-const dynamodb  = new aws.DynamoDB();
+const dynamodb  = new aws.DynamoDB.DocumentClient();
 
 module.exports.auth = (event, context, callback) => {
   return vo(function*(){
@@ -14,12 +14,12 @@ module.exports.auth = (event, context, callback) => {
     const oauth = yield TwitterOAuth.createInstance(event);
     const auth  = yield oauth.getOAuthRequestToken();
 
-    const ret = yield dynamodb.putItem({
+    const ret = yield dynamodb.put({
       TableName: "twitter_oauth", 
       Item: {
-        uid: {S:uid},
-        ttl: {N:(new Date().getTime() / 1000 + 60 * 24) + ""},
-        session: {S:auth.oauth_token_secret},
+        uid: uid,
+        ttl: (new Date().getTime() / 1000 + 60 * 24),
+        session: auth.oauth_token_secret,
       },
     }).promise();
 
@@ -40,25 +40,25 @@ module.exports.callback = (event, context, callback) => {
     const query  = event.queryStringParameters;
     const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
     const oauth  = yield TwitterOAuth.createInstance(event);
-    const row    = yield dynamodb.getItem({ TableName: "twitter_oauth", Key: { "uid": {S:sessid} } }).promise();
+    const row    = yield dynamodb.get({ TableName: "twitter_oauth", Key: { "uid": sessid } }).promise();
     
     if (!row.Item) {
       throw new Error("Record not found for sessid=" + sessid);
     }
     
-    const oauth_token_secret = row.Item.session.S;
+    const oauth_token_secret = row.Item.session;
     const ret = yield oauth.getOAuthAccessToken(query.oauth_token, oauth_token_secret, query.oauth_verifier);
     const me  = yield oauth.call_get_api(ret.access_token, ret.access_token_secret, "account/verify_credentials", {});
 
-    yield dynamodb.putItem({
+    yield dynamodb.put({
       TableName: "twitter_oauth",
       Item: {
-        uid:               {S:sessid},
-        twitter_id:        {S:me.id_str},
-        screen_name:       {S:me.screen_name},
-        display_name:      {S:me.name},
-        profile_image_url: {S:me.profile_image_url_https},
-        ttl:          {N:(new Date().getTime() / 1000 + 60 * 24 * 30) + ""},
+        uid:               sessid,
+        twitter_id:        me.id_str,
+        screen_name:       me.screen_name,
+        display_name:      me.name,
+        profile_image_url: me.profile_image_url_https,
+        ttl:               (new Date().getTime() / 1000 + 60 * 24 * 30),
       },
     }).promise();
     
@@ -74,9 +74,9 @@ module.exports.me = (event, context, callback) => {
   return vo(function*(){
     const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
 
-    const ret = yield dynamodb.getItem({
+    const ret = yield dynamodb.get({
       TableName: "twitter_oauth",
-      Key: { "uid": {S:sessid} },
+      Key: { "uid": sessid },
       AttributesToGet: ['twitter_id', 'screen_name', 'display_name', 'profile_image_url']
     }).promise();
     
@@ -88,11 +88,6 @@ module.exports.me = (event, context, callback) => {
 
     if (!row.twitter_id) {
       throw new Error("NOT_LOGGED_IN=" + sessid);
-    }
-    
-    // flatten dynamodb returns
-    for (const key of Object.keys(row)) {
-      row[key] = row[key].S;
     }
 
     return callback(null, {
