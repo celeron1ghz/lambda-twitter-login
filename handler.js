@@ -71,7 +71,7 @@ module.exports.callback = (event, context, callback) => {
 };
 
 module.exports.me = (event, context, callback) => {
-  vo(function*(){
+  return vo(function*(){
     const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
 
     const ret = yield dynamodb.getItem({
@@ -83,11 +83,11 @@ module.exports.me = (event, context, callback) => {
     const row = ret.Item;
     
     if (!row) {
-      throw new Error("Record not found. sessid=" + sessid);
+      throw new Error("LOGIN_EXPIRED=" + sessid);
     }
 
     if (!row.twitter_id) {
-      throw new Error("Not logged in. sessid=" + sessid);
+      throw new Error("NOT_LOGGED_IN=" + sessid);
     }
     
     // flatten dynamodb returns
@@ -95,7 +95,7 @@ module.exports.me = (event, context, callback) => {
       row[key] = row[key].S;
     }
 
-    callback(null, {
+    return callback(null, {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
@@ -105,7 +105,7 @@ module.exports.me = (event, context, callback) => {
     });
 
   }).catch(err => {
-    console.log("Error on me:", err);
-    callback(null, { statusCode: 500, body: JSON.stringify({ error: 1 }) });
+    const res = err.message.split("=");
+    return callback(null, { statusCode: 500, body: JSON.stringify({ error: res[0] }) });
   });
 };
