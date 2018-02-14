@@ -17,8 +17,11 @@ provider:
       Action:
         - dynamodb:GetItem
         - dynamodb:PutItem
+        - dynamodb:DeleteItem
       Resource:
         - Fn::Join: [ ":", ["arn:aws:dynamodb", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "table/twitter_oauth"]]
+  environment:
+    TWITTER_OAUTH_ORIGIN_URL: "${env:TWITTER_OAUTH_ORIGIN_URL}"
 
 functions:
   auth:
@@ -29,12 +32,14 @@ functions:
     handler: handler.callback
     events:
       - { http: { path: callback, method: get } }
+  logout:
+    handler: handler.logout
+    events:
+      - { http: { path: logout, method: get, cors: true } }
   me:
     handler: handler.me
     events:
       - { http: { path: me, method: get, cors: true } }
-    environment:
-      TWITTER_OAUTH_ORIGIN_URL: "${env:TWITTER_OAUTH_ORIGIN_URL}"
 
 resources:
   Resources:
@@ -49,7 +54,7 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TimeToLiveSpecification: 
+        TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
 

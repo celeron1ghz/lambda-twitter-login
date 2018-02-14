@@ -111,3 +111,25 @@ module.exports.me = (event, context, callback) => {
     return callback(null, { statusCode: 500, body: JSON.stringify({ error: res[0] }) });
   });
 };
+
+module.exports.logout = (event, context, callback) => {
+  return vo(function*(){
+    const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
+    yield dynamodb.delete({
+      TableName: "twitter_oauth",
+      Key: { "uid": sessid },
+    }).promise();
+
+    return callback(null, {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
+        'Access-Control-Allow-Credentials': true,
+      },
+      body: null,
+    });
+  }).catch(err => {
+    console.log("Error on logout:", err);
+    callback(null, { statusCode: 500, body: "ERROR!" });
+  });
+};
