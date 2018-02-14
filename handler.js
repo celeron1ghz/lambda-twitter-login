@@ -15,7 +15,7 @@ module.exports.auth = (event, context, callback) => {
     const auth  = yield oauth.getOAuthRequestToken();
 
     const ret = yield dynamodb.put({
-      TableName: "twitter_oauth", 
+      TableName: "twitter_oauth",
       Item: {
         uid: uid,
         ttl: (new Date().getTime() / 1000 + 60 * 24),
@@ -24,9 +24,12 @@ module.exports.auth = (event, context, callback) => {
     }).promise();
 
     return callback(null, {
-      statusCode: 200,
-      body:       'https://twitter.com/oauth/authenticate?oauth_token=' + auth.oauth_token,
-      headers:    { 'Set-Cookie': 'sessid=' + uid },
+      statusCode: 302,
+      body:       '',
+      headers:    {
+        'Location': 'https://twitter.com/oauth/authenticate?oauth_token=' + auth.oauth_token,
+        'Set-Cookie': 'sessid=' + uid,
+      },
     });
 
   }).catch(err => {
@@ -41,11 +44,11 @@ module.exports.callback = (event, context, callback) => {
     const sessid = Cookie.parse(event.headers.Cookie || '').sessid;
     const oauth  = yield TwitterOAuth.createInstance(event);
     const row    = yield dynamodb.get({ TableName: "twitter_oauth", Key: { "uid": sessid } }).promise();
-    
+
     if (!row.Item) {
       throw new Error("Record not found for sessid=" + sessid);
     }
-    
+
     const oauth_token_secret = row.Item.session;
     const ret = yield oauth.getOAuthAccessToken(query.oauth_token, oauth_token_secret, query.oauth_verifier);
     const me  = yield oauth.call_get_api(ret.access_token, ret.access_token_secret, "account/verify_credentials", {});
@@ -61,8 +64,12 @@ module.exports.callback = (event, context, callback) => {
         ttl:               (new Date().getTime() / 1000 + 60 * 24 * 30),
       },
     }).promise();
-    
-    callback(null, { statusCode: 200, body: "OK" });
+
+    callback(null, {
+      statusCode: 200,
+      headers: { 'Content-Type': "text/html" },
+      body: "<script>window.close()</script>",
+    });
 
   }).catch(err => {
     console.log("Error on callback:", err);
@@ -79,9 +86,9 @@ module.exports.me = (event, context, callback) => {
       Key: { "uid": sessid },
       AttributesToGet: ['twitter_id', 'screen_name', 'display_name', 'profile_image_url']
     }).promise();
-    
+
     const row = ret.Item;
-    
+
     if (!row) {
       throw new Error("LOGIN_EXPIRED=" + sessid);
     }
