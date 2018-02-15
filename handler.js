@@ -28,7 +28,7 @@ module.exports.auth = (event, context, callback) => {
       body:       '',
       headers:    {
         'Location': 'https://twitter.com/oauth/authenticate?oauth_token=' + auth.oauth_token,
-        'Set-Cookie': 'sessid=' + uid,
+        'Set-Cookie': 'sessid=' + uid + '; secure;',
       },
     });
 
