@@ -100,7 +100,8 @@ module.exports.me = (event, context, callback) => {
     return callback(null, {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
+        //'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
+        'Access-Control-Allow-Origin': event.headers.origin,
         'Access-Control-Allow-Credentials': true,
       },
       body: JSON.stringify(row),
@@ -123,7 +124,8 @@ module.exports.logout = (event, context, callback) => {
     return callback(null, {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
+        //'Access-Control-Allow-Origin': process.env.TWITTER_OAUTH_ORIGIN_URL,
+        'Access-Control-Allow-Origin': event.headers.origin,
         'Access-Control-Allow-Credentials': true,
       },
       body: null,

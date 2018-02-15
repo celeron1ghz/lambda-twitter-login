@@ -20,8 +20,8 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         - Fn::Join: [ ":", ["arn:aws:dynamodb", { Ref: AWS::Region }, { Ref: AWS::AccountId }, "table/twitter_oauth"]]
-  environment:
-    TWITTER_OAUTH_ORIGIN_URL: "${env:TWITTER_OAUTH_ORIGIN_URL}"
+#  environment:
+#    TWITTER_OAUTH_ORIGIN_URL: "${env:TWITTER_OAUTH_ORIGIN_URL}"
 
 functions:
   auth:
