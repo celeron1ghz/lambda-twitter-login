@@ -1,5 +1,5 @@
-# lambda-twitter-login
-Twitter OAuth login with serverless.
+# lambda-twitter-login-session
+Twitter OAuth login with serverless and session.
 
 
 ## SETUP
