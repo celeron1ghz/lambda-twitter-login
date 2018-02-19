@@ -53,6 +53,8 @@ module.exports.callback = (event, context, callback) => {
     const ret = yield oauth.getOAuthAccessToken(query.oauth_token, oauth_token_secret, query.oauth_verifier);
     const me  = yield oauth.call_get_api(ret.access_token, ret.access_token_secret, "account/verify_credentials", {});
 
+    console.log("OAUTH_SUCCESS:", me.screen_name, "(" + me.name + ")");
+
     yield dynamodb.put({
       TableName: "twitter_oauth",
       Item: {
