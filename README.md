@@ -44,12 +44,12 @@ e.g.) `example.com`
 
 ### SETUP SERVERLESS SCRIPT
 ```
-git clone https://github.com/celeron1ghz/lambda-twitter-login.git
+git clone https://github.com/celeron1ghz/lambda-twitter-login-session.git
 cd lambda-twitter-login
 sls deploy
 ```
 
 
 ## SEE ALSO
- * https://github.com/celeron1ghz/lambda-twitter-login.git
+ * https://github.com/celeron1ghz/lambda-twitter-login-session.git
  * https://github.com/abeyuya/serverless-auth.git
